@@ -2,128 +2,138 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
-public class StartScreen extends JPanel {
-    private CatBakeryGame game;
+public class StartScreen extends BaseScreen {
     private JComboBox<String> nameComboBox;
     private JLabel highScoreLabel;
     private JLabel catImageLabel;
+    private Map<String, String> nameToImageKey = new HashMap<>();
 
     //I based these names off the assets that Jessica made.
     private String[] catBakerNames = {
             "Pippi", "Sammi", "Sophie"
     };
 
-    public StartScreen(CatBakeryGame game) {
-        this.game = game;
-        setLayout(new BorderLayout());
-        setBackground(new Color(255, 223, 186)); // Light orange background
+    // Emoji fallbacks for each cat type
+    private Map<String, String> emojiMap = new HashMap<>();
 
+    public StartScreen(CatBakeryGame game) {
+        super(game);
+        setBackgroundImage(game.getStartBg());
+        initializeMappings();
         createUI();
     }
 
+    private void initializeMappings() {
+        // Map names to image keys
+        nameToImageKey.put("Pippi", "Pippi");
+        nameToImageKey.put("Sammi", "Sammi");
+        nameToImageKey.put("Sophie", "Sophie");
+
+        // Initialize emoji fallbacks
+        emojiMap.put("pippi", "\uD83D\uDE38");
+        emojiMap.put("sammi", "\uD83D\uDC31");
+        emojiMap.put("sophie", "\uD83D\uDE3B");
+    }
+
     private void createUI() {
-        //Title Panel
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setBackground(new Color(139, 69, 19));
-        titlePanel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
+        // Header
+        JPanel headerPanel = createHeaderPanel();
+        add(headerPanel, BorderLayout.NORTH);
 
-        JLabel titleLabel = new JLabel("\uD83D\uDC31 The Honey Bun Cakery \uD83C\uDF70", JLabel.CENTER); //Cat and Cake emojis
-        titleLabel.setFont(new Font("Serif", Font.BOLD, 36));
-        titleLabel.setForeground(Color.WHITE);
-
-        JLabel subtitleLabel = new JLabel("Choose your baker cat and start baking!", JLabel.CENTER);
-        subtitleLabel.setFont(new Font("Serif", Font.PLAIN, 18));
-        subtitleLabel.setForeground(new Color(255, 253, 208));
-
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
-        titlePanel.add(subtitleLabel, BorderLayout.SOUTH);
-
-        //Center Content Panel
-        JPanel centerPanel = new JPanel(new GridBagLayout());
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(30, 100, 30, 100));
-        centerPanel.setBackground(new Color(255, 223, 186));
+        // Main content panel with transparency
+        JPanel contentPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.setColor(new Color(255, 255, 255, 1)); // Semi-transparent white
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(40, 80, 40, 80));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10, 0, 20, 0);
+        gbc.insets = new Insets(10, 0, 10, 0);
 
-        //Cat Image Placeholder (Will need refactored in some way to use the image assets)
-        catImageLabel = new JLabel("\uD83C\uDF70", JLabel.CENTER); //Cat emoji
+        // Cat Image Display
+        JPanel catDisplayPanel = new JPanel(new BorderLayout());
+        catDisplayPanel.setOpaque(false);
+        catDisplayPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+
+        // Frame for cat image
+        JPanel catFrame = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+            }
+        };
+        catFrame.setOpaque(false);
+        catFrame.setPreferredSize(new Dimension(200, 200));
+        catFrame.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        catImageLabel = new JLabel("", JLabel.CENTER);
         catImageLabel.setFont(new Font("Serif", Font.PLAIN, 80));
-        catImageLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-        centerPanel.add(catImageLabel, gbc);
+        updateCatImage((String) catBakerNames[0]); // Set initial image
 
-        //Player Name Selection
+        catFrame.add(catImageLabel, BorderLayout.CENTER);
+        catDisplayPanel.add(catFrame, BorderLayout.CENTER);
+
+        contentPanel.add(catDisplayPanel, gbc);
+
+        // Name Selection
         JPanel namePanel = new JPanel(new BorderLayout());
-        namePanel.setBackground(new Color(255, 223, 186));
+        namePanel.setOpaque(false);
 
-        JLabel nameLabel = new JLabel("Choose Your Baker Cat:");
-        nameLabel.setFont(new Font("Serif", Font.BOLD, 18));
-        nameLabel.setHorizontalAlignment(JLabel.CENTER);
+        JLabel nameLabel = new JLabel("Choose Your Baker Cat:", JLabel.CENTER);
+        nameLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
         nameLabel.setForeground(new Color(139, 69, 19));
 
         nameComboBox = new JComboBox<>(catBakerNames);
-        nameComboBox.setFont(new Font("Serif", Font.PLAIN, 16));
+        nameComboBox.setFont(new Font("Arial", Font.PLAIN, 16));
         nameComboBox.setBackground(Color.WHITE);
-        nameComboBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(139, 69, 19), 2),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)
-        ));
-        nameComboBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (c instanceof JLabel) {
-                    ((JLabel) c).setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-                }
-                return c;
-            }
-        });
 
-        // Add action listener to update the cat emoji based on selection
+        // Add action listener to update cat image when selection changes
         nameComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateCatEmoji();
+                String selectedName = (String) nameComboBox.getSelectedItem();
+                updateCatImage(selectedName);
             }
         });
 
         namePanel.add(nameLabel, BorderLayout.NORTH);
         namePanel.add(nameComboBox, BorderLayout.CENTER);
-        centerPanel.add(namePanel, gbc);
+        contentPanel.add(namePanel, gbc);
 
-        //High Score Display
+        // High Score
         JPanel scorePanel = new JPanel(new BorderLayout());
-        scorePanel.setBackground(new Color(255, 223, 186));
+        scorePanel.setOpaque(false);
 
-        JLabel scoreTitleLabel = new JLabel("\uD83C\uDFC6 High Score", JLabel.CENTER); //Trophy emoji
-        scoreTitleLabel.setFont(new Font("Serif", Font.BOLD, 20));
+        JLabel scoreTitleLabel = new JLabel("\uD83C\uDFC6 High Score", JLabel.CENTER);
+        scoreTitleLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
         scoreTitleLabel.setForeground(new Color(139, 69, 19));
+        scoreTitleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         highScoreLabel = new JLabel("0", JLabel.CENTER);
-        highScoreLabel.setFont(new Font("Serif", Font.BOLD, 48));
-        highScoreLabel.setForeground(new Color(219, 112, 147)); //Pink
+        highScoreLabel.setFont(new Font("Arial", Font.BOLD, 48));
+        highScoreLabel.setForeground(new Color(219, 112, 147));
 
         scorePanel.add(scoreTitleLabel, BorderLayout.NORTH);
         scorePanel.add(highScoreLabel, BorderLayout.CENTER);
-        centerPanel.add(scorePanel, gbc);
+        contentPanel.add(scorePanel, gbc);
 
-        //Start Button
+        // Start Button with image
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(new Color(255, 223, 186));
+        buttonPanel.setOpaque(false);
 
-        JButton startButton = new JButton("Start Baking! \uD83C\uDF70"); //Cake emoji
-        startButton.setFont(new Font("Serif", Font.BOLD, 20));
-        startButton.setBackground(new Color(144, 238, 144)); //Light green
-        startButton.setForeground(Color.BLACK);
-        startButton.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(34, 139, 34), 3),
-                BorderFactory.createEmptyBorder(15, 30, 15, 30)
-        ));
-        startButton.setFocusPainted(false);
-
+        JButton startButton = createImageButton(game.getButtonIcon(0), "Start Baking! 🎂");
+        startButton.setBorderPainted(false);
+        startButton.setOpaque(false);
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -134,37 +144,55 @@ public class StartScreen extends JPanel {
         });
 
         buttonPanel.add(startButton);
-        gbc.insets = new Insets(20, 0, 0, 0);
-        centerPanel.add(buttonPanel, gbc);
+        contentPanel.add(buttonPanel, gbc);
 
-        //Instructions Panel
-        JPanel instructionPanel = new JPanel();
-        instructionPanel.setBackground(new Color(255, 248, 220));
-        instructionPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
+        add(contentPanel, BorderLayout.CENTER);
+    }
 
-        JTextArea instructions = new JTextArea(
-                "How to play Cozy Bakery Simulator:\n" +
-                        "• Read letters from customers with their orders\n" +
-                        "• Choose the right cake base, frosting, and topping for the order\n" +
-                        "• Select the correct delivery method\n" +
-                        "• Earn points for correct choices and lose points for incorrect choices\n" +
-                        "• Don't let your health reach zero!"
-        );
-        instructions.setEditable(false);
-        instructions.setFont(new Font("Serif", Font.PLAIN, 14));
-        instructions.setBackground(new Color(255, 248, 220));
-        instructions.setLineWrap(false);
-        instructions.setWrapStyleWord(true);
-        instructions.setAlignmentX(CENTER_ALIGNMENT);
+    private void updateCatImage(String selectedName) {
+        if (selectedName == null) return;
 
-        instructionPanel.add(instructions);
+        String imageKey = nameToImageKey.get(selectedName);
 
-        add(titlePanel, BorderLayout.NORTH);
-        add(centerPanel, BorderLayout.CENTER);
-        add(instructionPanel, BorderLayout.SOUTH);
+        if (imageKey != null && game.hasCatImages()) {
+            // Try to load image
+            ImageIcon catImage = game.getCatImage(imageKey);
+            if (catImage != null) {
+                // Scale image to fit
+                Image scaledImage = catImage.getImage().getScaledInstance(180, 180, Image.SCALE_SMOOTH);
+                catImageLabel.setIcon(new ImageIcon(scaledImage));
+                catImageLabel.setText(""); // Clear text
+                return;
+            }
+        }
 
-        //Set initial cat emoji
-        updateCatEmoji();
+        // Fallback to emoji
+        String emoji = emojiMap.getOrDefault(imageKey != null ? imageKey : "default", "🐱");
+        catImageLabel.setIcon(null); // Clear icon
+        catImageLabel.setText(emoji);
+        catImageLabel.setFont(new Font("Serif", Font.PLAIN, 100));
+    }
+
+    private JButton createImageButton(ImageIcon icon, String text) {
+        JButton button = new JButton(text);
+        if (icon != null) {
+            button.setIcon(icon);
+            button.setText(""); // Remove text if we have an image
+            button.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
+        } else {
+            // Fallback styling
+            button.setFont(new Font("Arial", Font.BOLD, 20));
+            button.setBackground(new Color(144, 238, 144));
+            button.setForeground(Color.BLACK);
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(34, 139, 34), 3),
+                    BorderFactory.createEmptyBorder(15, 30, 15, 30)
+            ));
+        }
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(true);
+        return button;
     }
 
     //Placeholder until we refactor to use the image assets for the cats

@@ -5,14 +5,33 @@ public abstract class BaseScreen extends JPanel {
     protected CatBakeryGame game;
     protected JLabel dayLabel, scoreLabel, playerNameLabel;
     protected JProgressBar healthBar;
+    protected Image backgroundImage;
 
     public BaseScreen(CatBakeryGame game) {
         this.game = game;
+        setLayout(new BorderLayout());
+    }
+
+    protected void setBackgroundImage(ImageIcon bgIcon) {
+        if (bgIcon != null) {
+            backgroundImage = bgIcon.getImage();
+        } else {
+            // Fallback color
+            setBackground(new Color(255, 253, 208));
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 
     protected JPanel createHeaderPanel() {
         JPanel header = new JPanel(new GridLayout(1, 4));
-        header.setBackground(new Color(139, 69, 19));
+        header.setBackground(new Color(167, 178, 249, 100));
         header.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         playerNameLabel = new JLabel("Baker: ", JLabel.CENTER);
@@ -26,6 +45,7 @@ public abstract class BaseScreen extends JPanel {
         styleHeaderLabel(dayLabel);
         styleHeaderLabel(scoreLabel);
         healthBar.setForeground(Color.GREEN);
+        healthBar.setBackground(new Color(50, 50, 50));
 
         header.add(playerNameLabel);
         header.add(dayLabel);

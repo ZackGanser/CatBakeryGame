@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.io.File;
 
 public class CatBakeryGame extends JFrame {
     private CardLayout cardLayout;
@@ -16,11 +17,19 @@ public class CatBakeryGame extends JFrame {
     private Order currentOrder;
 
     private StartScreen startScreen;
+    private LetterIntroScreen letterIntroScreen;
     private LetterScreen letterScreen;
     private BakingScreen bakingScreen;
     private DeliveryScreen deliveryScreen;
     private FeedbackScreen feedbackScreen;
     private GameOverScreen gameOverScreen;
+
+    // Image paths
+    private final String IMAGE_PATH = "images/";
+    private ImageIcon startBg, letterIntroBg, letterIntroBgOpen, letterBg, bakingBg, deliveryBg, feedbackBg, gameOverBg;
+    private ImageIcon[] buttonIcons = new ImageIcon[5];
+    private ImageIcon catIcon;
+    private Map<String, ImageIcon> catImages = new HashMap<>();
 
     public CatBakeryGame() {
         setTitle("Cozy Bakery Simulator");
@@ -28,15 +37,103 @@ public class CatBakeryGame extends JFrame {
         setSize(1000, 900);
         setLocationRelativeTo(null);
 
+        loadImages();
         setupScreens();
         showStartScreen();
     }
+
+    private void loadImages() {
+        try {
+            // Load background images
+            startBg = loadImage("startScreen.jpg", "startScreen.png");
+            letterIntroBg = loadImage("mailboxClosedBg.jpg", "mailboxClosedBg.png");
+            letterIntroBgOpen = loadImage("mailboxOpenBg.jpg", "mailboxOpenBg.png");
+            letterBg = loadImage("background.jpg", "background.png");
+            bakingBg = loadImage("bakingBg.jpg", "bakingBg.png");
+            deliveryBg = loadImage("deliveryBg.jpg", "deliveryBg.png");
+            feedbackBg = loadImage("background.jpg", "background.png");
+            gameOverBg = loadImage("gameover_bg.jpg", "gameover_bg.png");
+
+            // Load button images
+            buttonIcons[0] = loadImage("startButton.png", "startButton.jpg");
+            buttonIcons[1] = loadImage("nextButton.png", "nextButton.jpg");
+            buttonIcons[2] = loadImage("nextButton.png", "nextButton.jpg");
+            buttonIcons[3] = loadImage("nextButton.png", "nextButton.jpg");
+            buttonIcons[4] = loadImage("nextButton.png", "nextButton.jpg");
+
+            // Load cat icon
+            loadCatImages();
+
+        } catch (Exception e) {
+            System.err.println("Error loading images: " + e.getMessage());
+            System.err.println("Using fallback colors");
+            // Use fallback colors if images fail to load
+        }
+    }
+
+    private void loadCatImages() {
+        // Try to load cat images for each baker
+        String[] catNames = {
+                "pippi", "sammi", "sophie"
+        };
+
+        for (String catName : catNames) {
+            ImageIcon icon = loadImage(catName + ".png", catName + ".jpg");
+            if (icon != null) {
+                catImages.put(catName, icon);
+            }
+        }
+
+        // If no cat images found, use fallback emojis
+        if (catImages.isEmpty()) {
+            System.out.println("No cat images found, using emoji fallbacks");
+        }
+    }
+
+    public ImageIcon getCatImage(String catKey) {
+        return catImages.get(catKey.toLowerCase());
+    }
+
+    public boolean hasCatImages() {
+        return !catImages.isEmpty();
+    }
+
+    public ImageIcon getPawSealIcon() {
+        return loadImage("pawSeal.png", "pawSeal.jpg");
+    }
+
+    public ImageIcon loadImage(String pngName, String jpgName) {
+        // Try PNG first, then JPG
+        String[] extensions = {".png", ".jpg", ".jpeg"};
+        for (String ext : extensions) {
+            String filename = IMAGE_PATH + pngName.replace(".png", ext).replace(".jpg", ext);
+            File file = new File(filename);
+            if (file.exists()) {
+                return new ImageIcon(filename);
+            }
+        }
+        return null; // No image found
+    }
+
+    public ImageIcon getStartBg() { return startBg; }
+    public ImageIcon getLetterIntroBg() { return letterIntroBg; }
+    public ImageIcon getLetterIntroBgOpen() { return letterIntroBgOpen; }
+    public ImageIcon getLetterBg() { return letterBg; }
+    public ImageIcon getBakingBg() { return bakingBg; }
+    public ImageIcon getDeliveryBg() { return deliveryBg; }
+    public ImageIcon getFeedbackBg() { return feedbackBg; }
+    public ImageIcon getGameOverBg() { return gameOverBg; }
+    public ImageIcon getButtonIcon(int index) {
+        return (index >= 0 && index < buttonIcons.length) ? buttonIcons[index] : null;
+    }
+    public ImageIcon getCatIcon() { return catIcon; }
 
     private void setupScreens() {
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
         startScreen = new StartScreen(this);
+        letterIntroScreen = new LetterIntroScreen(this);
         letterScreen = new LetterScreen(this);
         bakingScreen = new BakingScreen(this);
         deliveryScreen = new DeliveryScreen(this);
@@ -44,6 +141,7 @@ public class CatBakeryGame extends JFrame {
         gameOverScreen = new GameOverScreen(this);
 
         mainPanel.add(startScreen, "START");
+        mainPanel.add(letterIntroScreen, "LETTER_INTRO");
         mainPanel.add(letterScreen, "LETTER");
         mainPanel.add(bakingScreen, "BAKING");
         mainPanel.add(deliveryScreen, "DELIVERY");
@@ -66,9 +164,13 @@ public class CatBakeryGame extends JFrame {
 
     private void startNewDay() {
         currentOrder = generateOrder();
-        letterScreen.displayLetter(currentOrder);
-        showScreen("LETTER");
+        showScreen("LETTER_INTRO");
         updateUI();
+        // Reset and start animation for new day
+        if (letterIntroScreen instanceof LetterIntroScreen) {
+            ((LetterIntroScreen)letterIntroScreen).resetAnimation();
+            ((LetterIntroScreen)letterIntroScreen).startAnimation();
+        }
     }
 
     //Getter methods in case we end up needing them. We can just get rid of any we don't end up using.
@@ -82,10 +184,24 @@ public class CatBakeryGame extends JFrame {
 
     public String getPlayerName() { return playerName; }
     public void setPlayerName(String name) { this.playerName = name; }
+    public int getCurrentDay() { return currentDay; }
+    public int getScore() { return score; }
+    public int getHealth() { return health; }
 
     public void showStartScreen() {
         startScreen.updateHighScore(highScore);
         showScreen("START");
+    }
+
+    public void showLetterScreen() {
+        // Tell the letter screen to regenerate customer
+        if (letterScreen instanceof LetterScreen) {
+            ((LetterScreen)letterScreen).regenerateCustomer();
+        }
+
+        // Display the actual letter on the letter screen
+        letterScreen.displayLetter(currentOrder);
+        showScreen("LETTER");
     }
 
     public void showScreen(String screenName) {
@@ -94,6 +210,7 @@ public class CatBakeryGame extends JFrame {
 
     private void updateUI() {
         GameState gameState = new GameState(currentDay, score, health, playerName);
+        letterIntroScreen.updateGameInfo(gameState);
         letterScreen.updateGameInfo(gameState);
         bakingScreen.updateGameInfo(gameState);
         deliveryScreen.updateGameInfo(gameState);
